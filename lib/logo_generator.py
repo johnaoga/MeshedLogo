@@ -145,6 +145,7 @@ class LogoGenerator:
         # Set canvas limits
         ax.set_xlim(0, logo.canvas_size[0])
         ax.set_ylim(0, logo.canvas_size[1])
+        ax.invert_yaxis()  # Match image coordinate system (Y increases downward)
         ax.axis('off')
         
         # Add title if needed
