@@ -3,3 +3,8 @@ numpy>=1.26.0
 scipy>=1.11.0
 Pillow>=10.0.0
 opencv-python>=4.8.0
+
+# Documentation (optional, only needed for building docs)
+sphinx>=8.0.0
+sphinx-rtd-theme>=3.0.0
+myst-parser>=4.0.0

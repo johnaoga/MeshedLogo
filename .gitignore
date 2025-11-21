@@ -9,3 +9,6 @@ bin/__pycache__
 output
 venv
 .DS_Store
+docs/_build
+
+
