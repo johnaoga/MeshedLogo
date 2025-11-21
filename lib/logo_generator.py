@@ -311,19 +311,24 @@ class LogoGenerator:
         meshes = []
         
         for char_img in processed.images:
-            # Extract contour
-            contour = self.contour_extractor.extract_largest(
+            # Extract contours WITH openings detection (detects holes AND openings like 'C', 'U', 'H')
+            largest_contour, all_holes = self.contour_extractor.extract_with_openings(
                 char_img.matrix, threshold=127, simplify=True, epsilon=3.0
             )
             
-            if contour:
-                contours.append(contour)
+            if largest_contour:
+                contours.append(largest_contour)
                 
-                # Generate mesh
+                # Extract holes list
+                holes_list = [hole.points for hole in all_holes] if all_holes else None
+                
+                # Generate mesh with ALL holes (traditional + openings)
                 mesh = self.mesh_generator.generate(
-                    contour.points,
+                    largest_contour.points,
                     add_interior_points=True,
-                    num_interior_points=int(30 * mesh_density)
+                    num_interior_points=int(30 * mesh_density),
+                    holes=holes_list,
+                    character_image=char_img.matrix  # Still use for triangle filtering
                 )
                 meshes.append(mesh)
             else:

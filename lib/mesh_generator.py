@@ -4,11 +4,12 @@ Creates triangle meshes from point sets using Delaunay triangulation
 """
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 import numpy as np
 from scipy.spatial import Delaunay
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
+from matplotlib.path import Path
 import random
 
 
@@ -147,16 +148,24 @@ class MeshGenerator:
                 add_interior_points: bool = False,
                 num_interior_points: int = 20,
                 boundary_refinement: bool = False,
-                refinement_factor: int = 2) -> MeshData:
+                refinement_factor: int = 2,
+                holes: Optional[List[np.ndarray]] = None,
+                boundary_for_testing: Optional[np.ndarray] = None,
+                holes_for_testing: Optional[List[np.ndarray]] = None,
+                character_image: Optional[np.ndarray] = None) -> MeshData:
         """
         Generate a triangle mesh from points
         
         Args:
-            points: Array of (x, y) coordinates
+            points: Array of (x, y) coordinates for outer boundary (mesh vertices)
             add_interior_points: Whether to add random interior points
             num_interior_points: Number of interior points to add
             boundary_refinement: Whether to refine boundary edges
             refinement_factor: Subdivision factor for boundary refinement
+            holes: Optional list of hole boundaries for triangle filtering
+            boundary_for_testing: Detailed boundary for accurate point-in-polygon testing
+            holes_for_testing: Detailed hole boundaries for accurate point-in-polygon testing
+            character_image: Original character binary image (0=char, 1=background) for pixel-accurate testing
             
         Returns:
             MeshData object containing the mesh
@@ -166,10 +175,16 @@ class MeshGenerator:
         
         points_array = np.array(points)
         
+        # Use detailed boundary for testing if provided, otherwise use simplified
+        test_boundary = boundary_for_testing if boundary_for_testing is not None else points_array
+        test_holes = holes_for_testing if holes_for_testing is not None else holes
+        
         # Add interior points if requested
         if add_interior_points:
             points_array = self._add_interior_points(
-                points_array, num_interior_points
+                points_array, num_interior_points, 
+                holes=test_holes, boundary=test_boundary,
+                character_image=character_image
             )
         
         # Refine boundary if requested
@@ -180,15 +195,16 @@ class MeshGenerator:
         
         # Generate triangulation
         if self.method == 'delaunay':
-            mesh = self._delaunay_triangulation(points_array)
+            mesh = self._delaunay_triangulation(points_array, holes=holes)
         else:
-            mesh = self._delaunay_triangulation(points_array)
+            mesh = self._delaunay_triangulation(points_array, holes=holes)
         
         return mesh
     
     def generate_from_contour(self, contour_points: np.ndarray,
                              density: float = 1.0,
-                             smooth_interior: bool = True) -> MeshData:
+                             smooth_interior: bool = True,
+                             holes: Optional[List[np.ndarray]] = None) -> MeshData:
         """
         Generate mesh from a contour with interior fill
         
@@ -196,6 +212,7 @@ class MeshGenerator:
             contour_points: Boundary contour points
             density: Interior point density (higher = more triangles)
             smooth_interior: Whether to add smoothly distributed interior points
+            holes: Optional list of hole boundaries to exclude from mesh
             
         Returns:
             MeshData object
@@ -207,16 +224,16 @@ class MeshGenerator:
         
         if smooth_interior:
             interior_points = self._generate_interior_points_poisson(
-                contour_points, num_interior
+                contour_points, num_interior, holes=holes
             )
         else:
             interior_points = self._add_interior_points(
-                contour_points, num_interior
+                contour_points, num_interior, holes=holes
             )
         
         # Combine and triangulate
         all_points = interior_points
-        mesh = self._delaunay_triangulation(all_points)
+        mesh = self._delaunay_triangulation(all_points, holes=holes)
         
         return mesh
     
@@ -357,39 +374,109 @@ class MeshGenerator:
         
         return fig
     
-    def _delaunay_triangulation(self, points: np.ndarray) -> MeshData:
-        """Perform Delaunay triangulation"""
+    def _delaunay_triangulation(self, points: np.ndarray, 
+                                 holes: Optional[List[np.ndarray]] = None) -> MeshData:
+        """
+        Perform Delaunay triangulation with optional hole filtering
+        
+        Args:
+            points: Points to triangulate
+            holes: Optional list of hole boundaries to filter triangles
+            
+        Returns:
+            MeshData with triangulation
+        """
         tri = Delaunay(points)
+        
+        # Filter triangles if holes are provided
+        if holes and len(holes) > 0:
+            hole_paths = [Path(hole) for hole in holes]
+            valid_triangles = []
+            
+            for triangle_indices in tri.simplices:
+                # Calculate triangle centroid
+                triangle_points = points[triangle_indices]
+                centroid = np.mean(triangle_points, axis=0)
+                
+                # Check if centroid is inside any hole
+                in_hole = any(hole_path.contains_point(centroid) for hole_path in hole_paths)
+                
+                # Only keep triangle if centroid is NOT in a hole
+                if not in_hole:
+                    valid_triangles.append(triangle_indices)
+            
+            triangles = np.array(valid_triangles) if valid_triangles else tri.simplices
+        else:
+            triangles = tri.simplices
         
         return MeshData(
             points=points,
-            triangles=tri.simplices,
+            triangles=triangles,
             num_vertices=len(points),
-            num_triangles=len(tri.simplices)
+            num_triangles=len(triangles)
         )
     
     def _add_interior_points(self, boundary_points: np.ndarray,
-                            num_points: int) -> np.ndarray:
-        """Add random interior points within the boundary"""
+                            num_points: int, holes: Optional[List[np.ndarray]] = None,
+                            boundary: Optional[np.ndarray] = None,
+                            character_image: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Add random interior points within the boundary
+        
+        Args:
+            boundary_points: Outer boundary points (for mesh vertices)
+            num_points: Number of interior points to add
+            holes: Optional list of hole boundaries to exclude
+            boundary: Optional detailed boundary for accurate testing (if None, uses boundary_points)
+            character_image: Original character binary image (0=char, 1=background) for pixel-accurate testing
+            
+        Returns:
+            Combined array of boundary and interior points
+        """
         if num_points <= 0:
             return boundary_points
         
+        # Use detailed boundary for testing if provided
+        test_boundary = boundary if boundary is not None else boundary_points
+        
         # Get bounding box
-        x_min, y_min, x_max, y_max = self._get_bounding_box(boundary_points)
+        x_min, y_min, x_max, y_max = self._get_bounding_box(test_boundary)
+        
+        # Determine which testing method to use
+        use_image_testing = character_image is not None
+        
+        if not use_image_testing:
+            # Fallback to path-based testing
+            boundary_path = Path(test_boundary)
+            hole_paths = [Path(hole) for hole in holes] if holes else []
         
         # Generate random points
         interior_points = []
         attempts = 0
-        max_attempts = num_points * 10
+        max_attempts = num_points * 20  # Increased attempts for better coverage
         
         while len(interior_points) < num_points and attempts < max_attempts:
             x = random.uniform(x_min, x_max)
             y = random.uniform(y_min, y_max)
             point = np.array([x, y])
             
-            # Check if point is inside boundary (simplified check)
-            # For more robust check, use point-in-polygon algorithm
-            interior_points.append(point)
+            # Test if point is inside character
+            if use_image_testing:
+                # Use pixel-accurate testing with character image
+                # Convert to integer coordinates and check bounds
+                ix, iy = int(round(x)), int(round(y))
+                if (0 <= ix < character_image.shape[1] and 
+                    0 <= iy < character_image.shape[0]):
+                    # Check if pixel is part of character (0) not background (1)
+                    if character_image[iy, ix] == 0:
+                        interior_points.append(point)
+            else:
+                # Fallback to path-based testing
+                if boundary_path.contains_point(point):
+                    in_hole = any(hole_path.contains_point(point) for hole_path in hole_paths)
+                    if not in_hole:
+                        interior_points.append(point)
+            
             attempts += 1
         
         if len(interior_points) == 0:
@@ -399,12 +486,32 @@ class MeshGenerator:
         return combined
     
     def _generate_interior_points_poisson(self, boundary_points: np.ndarray,
-                                         num_points: int) -> np.ndarray:
-        """Generate well-distributed interior points using Poisson disk sampling approximation"""
-        x_min, y_min, x_max, y_max = self._get_bounding_box(boundary_points)
+                                         num_points: int, holes: Optional[List[np.ndarray]] = None,
+                                         boundary: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Generate well-distributed interior points using grid-based sampling
+        
+        Args:
+            boundary_points: Outer boundary points (for mesh vertices)
+            num_points: Number of interior points to add
+            holes: Optional list of hole boundaries to exclude
+            boundary: Optional detailed boundary for accurate testing (if None, uses boundary_points)
+            
+        Returns:
+            Combined array of boundary and interior points
+        """
+        # Use detailed boundary for testing if provided
+        test_boundary = boundary if boundary is not None else boundary_points
+        
+        x_min, y_min, x_max, y_max = self._get_bounding_box(test_boundary)
+        
+        # Create path for point-in-polygon testing using detailed boundary
+        boundary_path = Path(test_boundary)
+        hole_paths = [Path(hole) for hole in holes] if holes else []
         
         # Use grid-based approach for better distribution
-        grid_size = int(np.sqrt(num_points))
+        # Generate more candidates than needed to account for filtering
+        grid_size = int(np.sqrt(num_points * 3))
         x_steps = np.linspace(x_min, x_max, grid_size)
         y_steps = np.linspace(y_min, y_max, grid_size)
         
@@ -414,7 +521,20 @@ class MeshGenerator:
                 # Add some randomness
                 jitter_x = (x_max - x_min) / grid_size * 0.3 * (random.random() - 0.5)
                 jitter_y = (y_max - y_min) / grid_size * 0.3 * (random.random() - 0.5)
-                interior_points.append([x + jitter_x, y + jitter_y])
+                point = [x + jitter_x, y + jitter_y]
+                
+                # Check if point is inside boundary and not in any holes
+                if boundary_path.contains_point(point):
+                    in_hole = any(hole_path.contains_point(point) for hole_path in hole_paths)
+                    if not in_hole:
+                        interior_points.append(point)
+                        if len(interior_points) >= num_points:
+                            break
+            if len(interior_points) >= num_points:
+                break
+        
+        if len(interior_points) == 0:
+            return boundary_points
         
         combined = np.vstack([boundary_points, np.array(interior_points[:num_points])])
         return combined

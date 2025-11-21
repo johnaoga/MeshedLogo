@@ -8,6 +8,7 @@ from typing import List, Tuple, Optional
 import numpy as np
 from PIL import Image
 import cv2
+import matplotlib.pyplot as plt
 
 
 @dataclass
@@ -24,7 +25,7 @@ class ContourData:
         Save contour points to a file
         
         Args:
-            filepath: Path to save points (supports .npy, .txt, .csv)
+            filepath: Path to save points (supports .npy, .txt, .csv, .png)
             
         Returns:
             Saved file path
@@ -34,6 +35,50 @@ class ContourData:
         elif filepath.endswith('.csv'):
             np.savetxt(filepath, self.points, delimiter=',', 
                       header='x,y', comments='')
+        elif filepath.endswith('.png'):
+            # Visualize contour as PNG
+            fig, ax = plt.subplots(1, 1, figsize=(10, 10), facecolor='white')
+            ax.set_facecolor('white')
+            ax.set_aspect('equal')
+            
+            # Plot the contour points
+            if self.is_closed:
+                # Close the contour by adding first point at end
+                plot_points = np.vstack([self.points, self.points[0]])
+                ax.plot(plot_points[:, 0], plot_points[:, 1], 
+                       'b-', linewidth=2, label='Contour')
+                ax.fill(plot_points[:, 0], plot_points[:, 1], 
+                       'cyan', alpha=0.3)
+            else:
+                ax.plot(self.points[:, 0], self.points[:, 1], 
+                       'b-', linewidth=2, label='Contour')
+            
+            # Plot points
+            ax.scatter(self.points[:, 0], self.points[:, 1], 
+                      c='red', s=20, zorder=5, label='Points')
+            
+            # Add grid and labels
+            ax.grid(True, alpha=0.3)
+            ax.legend(loc='upper right')
+            ax.set_title(f'Contour Visualization ({self.num_points} points)')
+            ax.set_xlabel('X coordinate')
+            ax.set_ylabel('Y coordinate')
+            
+            # Set limits with padding
+            if len(self.points) > 0:
+                x_min, x_max = self.points[:, 0].min(), self.points[:, 0].max()
+                y_min, y_max = self.points[:, 1].min(), self.points[:, 1].max()
+                padding = 0.1 * max(x_max - x_min, y_max - y_min)
+                ax.set_xlim(x_min - padding, x_max + padding)
+                ax.set_ylim(y_min - padding, y_max + padding)
+            
+            # Invert y-axis to match image coordinates
+            ax.invert_yaxis()
+            
+            plt.tight_layout()
+            plt.savefig(filepath, dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            print(f"Contour visualization saved to {filepath}")
         else:  # .txt or default
             np.savetxt(filepath, self.points, delimiter=' ')
         
@@ -306,6 +351,75 @@ class ContourExtractor:
             ))
         
         return result
+    
+    def extract_with_openings(self, image_input, threshold: int = 127,
+                             simplify: bool = False, epsilon: float = 2.0) -> Tuple[Optional[ContourData], List[ContourData]]:
+        """
+        Extract largest contour and detect all holes INCLUDING openings
+        
+        Detects:
+        - Traditional holes (like in 'A', 'O', 'B')
+        - Openings/gaps connected to edges (like in 'C', 'U', 'H')
+        
+        Uses flood fill: fills the character + true holes, leaving openings as contours.
+        
+        Args:
+            image_input: Image input (various formats supported)
+            threshold: Threshold value for binarization
+            simplify: Whether to simplify contours
+            epsilon: Simplification tolerance
+            
+        Returns:
+            Tuple of (largest_contour, list_of_all_holes_including_openings)
+        """
+        # Load and binarize image
+        img_array = self._load_image(image_input)
+        binary = self._binarize(img_array, threshold)
+        
+        # Find all traditional contours
+        all_contours = self.extract(image_input, threshold, simplify, epsilon)
+        if not all_contours:
+            return None, []
+        
+        # Get largest contour (character boundary)
+        largest_contour = max(all_contours, key=lambda c: c.num_points)
+        
+        # binary: 255 = character, 0 = background
+        # Get convex hull of the contour - this fills ALL concave regions
+        hull = cv2.convexHull(largest_contour.points.astype(np.int32))
+        
+        # Fill the convex hull
+        filled_hull = np.zeros_like(binary)
+        cv2.fillConvexPoly(filled_hull, hull, 255)
+        
+        # Now find gaps: background pixels that are INSIDE the convex hull
+        # These are openings (like in 'C', 'U', 'H') or holes (like in 'A')
+        gaps = (filled_hull == 255) & (binary == 0)
+        
+        # Find contours of all gaps
+        gap_contours, _ = cv2.findContours(
+            gaps.astype(np.uint8) * 255,
+            cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        
+        holes = []
+        for contour in gap_contours:
+            if len(contour) >= 3:
+                points = contour.reshape(-1, 2)
+                if simplify:
+                    contour_reshaped = points.reshape(-1, 1, 2).astype(np.float32)
+                    simplified = cv2.approxPolyDP(contour_reshaped, epsilon, True)
+                    points = simplified.reshape(-1, 2)
+                
+                hole_data = ContourData(
+                    points=points,
+                    image_shape=binary.shape,
+                    num_points=len(points),
+                    is_closed=True
+                )
+                holes.append(hole_data)
+        
+        return largest_contour, holes
     
     def _resample_contour(self, points: np.ndarray, num_points: int) -> np.ndarray:
         """Resample contour to have specific number of points"""
