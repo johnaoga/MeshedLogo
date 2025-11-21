@@ -1,0 +1,10 @@
+__pycache__
+lib/__pycache__
+bin/__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyo
+*.pyd
+output
+venv
