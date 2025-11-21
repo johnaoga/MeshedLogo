@@ -44,6 +44,12 @@ class MeshedLogo:
                 mesh_density: float = 1.5,
                 show_wireframe: bool = True,
                 show_vertices: bool = True,
+                show_surface: bool = True,
+                wireframe_thickness: float = 0.5,
+                vertex_size: float = 8.0,
+                vertex_mode: str = 'all',
+                invert_mode: bool = False,
+                invert_margin: int = 50,
                 dpi: int = 300) -> str:
         """
         Generate a simple text logo
@@ -55,8 +61,14 @@ class MeshedLogo:
             position: Position on canvas (default: centered)
             scale: Text scale factor
             mesh_density: Mesh interior point density
-            show_wireframe: Show triangle edges
-            show_vertices: Show vertex points
+            show_wireframe: Show triangle edges (mesh lines)
+            show_vertices: Show vertex points (dots)
+            show_surface: Show filled triangles (surface)
+            wireframe_thickness: Line thickness for mesh edges
+            vertex_size: Size of vertex dots
+            vertex_mode: Vertex display mode ('all', 'random', 'none')
+            invert_mode: If True, mesh the background and treat character as hole
+            invert_margin: Margin (in pixels) around character when in invert mode
             dpi: Output resolution
             
         Returns:
@@ -76,7 +88,9 @@ class MeshedLogo:
             'scale': scale,
             'colors': colors,
             'is_formula': False,
-            'mesh_density': mesh_density
+            'mesh_density': mesh_density,
+            'invert_mode': invert_mode,
+            'invert_margin': invert_margin
         }]
         
         # Generate logo
@@ -87,6 +101,10 @@ class MeshedLogo:
             logo, output_file,
             show_wireframe=show_wireframe,
             show_vertices=show_vertices,
+            show_surface=show_surface,
+            wireframe_thickness=wireframe_thickness,
+            vertex_size=vertex_size,
+            vertex_mode=vertex_mode,
             show_gradient=True,
             dpi=dpi
         )
@@ -98,6 +116,10 @@ class MeshedLogo:
                       output_file: str = 'logo.png',
                       show_wireframe: bool = True,
                       show_vertices: bool = True,
+                      show_surface: bool = True,
+                      wireframe_thickness: float = 0.5,
+                      vertex_size: float = 8.0,
+                      vertex_mode: str = 'all',
                       dpi: int = 300) -> str:
         """
         Generate multi-component logo with custom configuration
@@ -123,6 +145,8 @@ class MeshedLogo:
         for comp in components:
             comp.setdefault('mesh_density', 1.5)
             comp.setdefault('is_formula', False)
+            comp.setdefault('invert_mode', False)
+            comp.setdefault('invert_margin', 50)
         
         # Generate logo
         logo = self.generator.create_logo(name, components)
@@ -132,6 +156,10 @@ class MeshedLogo:
             logo, output_file,
             show_wireframe=show_wireframe,
             show_vertices=show_vertices,
+            show_surface=show_surface,
+            wireframe_thickness=wireframe_thickness,
+            vertex_size=vertex_size,
+            vertex_mode=vertex_mode,
             show_gradient=True,
             dpi=dpi
         )

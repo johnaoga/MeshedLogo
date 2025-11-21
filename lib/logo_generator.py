@@ -117,6 +117,10 @@ class LogoGenerator:
     def render_logo(self, logo: Logo, output_file: str,
                    show_wireframe: bool = True,
                    show_vertices: bool = True,
+                   show_surface: bool = True,
+                   wireframe_thickness: float = 0.5,
+                   vertex_size: float = 8.0,
+                   vertex_mode: str = 'all',
                    show_gradient: bool = True,
                    dpi: int = 300) -> str:
         """
@@ -140,7 +144,9 @@ class LogoGenerator:
         # Render each component
         for component in logo.components:
             self._render_component(ax, component, show_wireframe, 
-                                 show_vertices, show_gradient)
+                                 show_vertices, show_surface,
+                                 wireframe_thickness, vertex_size,
+                                 vertex_mode, show_gradient)
         
         # Set canvas limits
         ax.set_xlim(0, logo.canvas_size[0])
@@ -291,6 +297,8 @@ class LogoGenerator:
         colors = config.get('colors', ['cyan'])
         is_formula = config.get('is_formula', False)
         mesh_density = config.get('mesh_density', 1.0)
+        invert_mode = config.get('invert_mode', False)
+        invert_margin = config.get('invert_margin', 50)
         
         # Calculate character size based on scale
         char_width = int(self.default_char_size[0] * scale)
@@ -312,30 +320,74 @@ class LogoGenerator:
         meshes = []
         
         for char_img in processed.images:
-            # Extract contours WITH openings detection (detects holes AND openings like 'C', 'U', 'H')
-            largest_contour, all_holes = self.contour_extractor.extract_with_openings(
-                char_img.matrix, threshold=127, simplify=True, epsilon=3.0
-            )
-            
-            if largest_contour:
-                contours.append(largest_contour)
+            if invert_mode:
+                # INVERT MODE: Mesh the background, character becomes a hole
+                # Create a bounding box around the character with margin
+                h, w = char_img.matrix.shape
+                margin = invert_margin
                 
-                # Extract holes list
-                holes_list = [hole.points for hole in all_holes] if all_holes else None
+                # Create rectangle boundary (with margin)
+                rect_points = np.array([
+                    [margin, margin],
+                    [w - margin, margin],
+                    [w - margin, h - margin],
+                    [margin, h - margin]
+                ])
                 
-                # Generate mesh with ALL holes (traditional + openings)
-                mesh = self.mesh_generator.generate(
-                    largest_contour.points,
-                    add_interior_points=True,
-                    num_interior_points=int(30 * mesh_density),
-                    holes=holes_list,
-                    character_image=char_img.matrix  # Still use for triangle filtering
+                # Extract character contour to use as hole
+                largest_contour, all_holes = self.contour_extractor.extract_with_openings(
+                    char_img.matrix, threshold=127, simplify=True, epsilon=3.0
                 )
-                meshes.append(mesh)
+                
+                if largest_contour:
+                    # Character contour becomes a hole in the background mesh
+                    holes_list = [largest_contour.points]
+                    # Add any internal holes from the character too
+                    if all_holes:
+                        holes_list.extend([hole.points for hole in all_holes])
+                    
+                    contours.append(largest_contour)  # Store for reference
+                    
+                    # Generate mesh of the rectangle with character as hole
+                    # Invert the character image for proper filtering
+                    inverted_img = 1 - char_img.matrix
+                    mesh = self.mesh_generator.generate(
+                        rect_points,
+                        add_interior_points=True,
+                        num_interior_points=int(50 * mesh_density),  # More points for background
+                        holes=holes_list,
+                        character_image=inverted_img  # Inverted for filtering
+                    )
+                    meshes.append(mesh)
+                else:
+                    contours.append(None)
+                    meshes.append(None)
             else:
-                # Empty contour/mesh
-                contours.append(None)
-                meshes.append(None)
+                # NORMAL MODE: Mesh the character
+                # Extract contours WITH openings detection (detects holes AND openings like 'C', 'U', 'H')
+                largest_contour, all_holes = self.contour_extractor.extract_with_openings(
+                    char_img.matrix, threshold=127, simplify=True, epsilon=3.0
+                )
+                
+                if largest_contour:
+                    contours.append(largest_contour)
+                    
+                    # Extract holes list
+                    holes_list = [hole.points for hole in all_holes] if all_holes else None
+                    
+                    # Generate mesh with ALL holes (traditional + openings)
+                    mesh = self.mesh_generator.generate(
+                        largest_contour.points,
+                        add_interior_points=True,
+                        num_interior_points=int(30 * mesh_density),
+                        holes=holes_list,
+                        character_image=char_img.matrix  # Still use for triangle filtering
+                    )
+                    meshes.append(mesh)
+                else:
+                    # Empty contour/mesh
+                    contours.append(None)
+                    meshes.append(None)
         
         return LogoComponent(
             text=text,
@@ -349,8 +401,11 @@ class LogoGenerator:
     
     def _render_component(self, ax: plt.Axes, component: LogoComponent,
                          show_wireframe: bool, show_vertices: bool,
+                         show_surface: bool, wireframe_thickness: float,
+                         vertex_size: float, vertex_mode: str,
                          show_gradient: bool):
         """Render a single logo component"""
+        import random
         base_x, base_y = component.position
         char_spacing = component.scale * 150  # Spacing between characters
         
@@ -376,38 +431,49 @@ class LogoGenerator:
             primary_color = component.color_scheme[color_idx]
             secondary_color = component.color_scheme[(color_idx + 1) % len(component.color_scheme)]
             
-            # Draw triangles
-            for tri_idx, tri_indices in enumerate(mesh.triangles):
-                triangle = transformed_points[tri_indices]
-                
-                # Calculate gradient
-                if show_gradient:
-                    ratio = tri_idx / max(len(mesh.triangles) - 1, 1)
-                    alpha = 0.3 + 0.5 * ratio
-                    color = primary_color if ratio < 0.5 else secondary_color
-                else:
-                    alpha = 0.5
-                    color = primary_color
-                
-                # Draw filled triangle
-                poly = Polygon(triangle, closed=True,
-                             edgecolor='none',
-                             facecolor=color,
-                             alpha=alpha,
-                             linewidth=0)
-                ax.add_patch(poly)
+            # Draw filled triangles (surface)
+            if show_surface:
+                for tri_idx, tri_indices in enumerate(mesh.triangles):
+                    triangle = transformed_points[tri_indices]
+                    
+                    # Calculate gradient
+                    if show_gradient:
+                        ratio = tri_idx / max(len(mesh.triangles) - 1, 1)
+                        alpha = 0.3 + 0.5 * ratio
+                        color = primary_color if ratio < 0.5 else secondary_color
+                    else:
+                        alpha = 0.5
+                        color = primary_color
+                    
+                    # Draw filled triangle
+                    poly = Polygon(triangle, closed=True,
+                                 edgecolor='none',
+                                 facecolor=color,
+                                 alpha=alpha,
+                                 linewidth=0)
+                    ax.add_patch(poly)
             
-            # Draw wireframe
+            # Draw wireframe (mesh lines)
             if show_wireframe:
                 for tri_indices in mesh.triangles:
                     triangle = transformed_points[tri_indices]
                     triangle_closed = np.vstack([triangle, triangle[0]])
                     ax.plot(triangle_closed[:, 0], triangle_closed[:, 1],
-                           color='cyan', linewidth=0.5, alpha=0.6)
+                           color='cyan', linewidth=wireframe_thickness, alpha=0.6)
             
-            # Draw vertices
-            if show_vertices:
-                ax.scatter(transformed_points[:, 0], transformed_points[:, 1],
-                          c='white', s=8, alpha=0.7, zorder=10,
-                          edgecolors='cyan', linewidths=0.3)
+            # Draw vertices (dots)
+            if show_vertices and vertex_mode != 'none':
+                if vertex_mode == 'all':
+                    # Show all vertices
+                    ax.scatter(transformed_points[:, 0], transformed_points[:, 1],
+                              c='white', s=vertex_size, alpha=0.7, zorder=10,
+                              edgecolors='cyan', linewidths=0.3)
+                elif vertex_mode == 'random':
+                    # Show random subset of vertices (50%)
+                    num_points = len(transformed_points)
+                    indices = random.sample(range(num_points), num_points // 2)
+                    random_points = transformed_points[indices]
+                    ax.scatter(random_points[:, 0], random_points[:, 1],
+                              c='white', s=vertex_size, alpha=0.7, zorder=10,
+                              edgecolors='cyan', linewidths=0.3)
 
