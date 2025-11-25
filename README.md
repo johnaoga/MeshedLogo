@@ -1,7 +1,7 @@
 # MeshedLogo - Triangle Mesh Logo Generator
 
 <p align="center">
-  <img src="test_output/much_logo.png" alt="MeshedLogo Example" width="600">
+  <img src="docs/_static/images/much_logo.png" alt="MeshedLogo Example" width="600">
 </p>
 
 A professional Python system for generating beautiful triangle-meshed logos from text and mathematical formulas.
