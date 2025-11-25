@@ -1,0 +1,23 @@
+# Include documentation
+include README.md
+include QUICKSTART.md
+include LICENSE
+
+# Include requirements
+include requirements.txt
+
+# Include examples
+recursive-include bin *.py
+
+# Include tests
+recursive-include tests *.py
+
+# Exclude output directories
+recursive-exclude test_output *
+recursive-exclude debug_output *
+recursive-exclude docs/_build *
+
+# Exclude cache and build artifacts
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
