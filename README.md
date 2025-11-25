@@ -26,17 +26,24 @@ A professional Python system for generating beautiful triangle-meshed logos from
 
 ### Installation
 
+**Option 1: Install from PyPI (Recommended)**
+
+```bash
+pip install meshedlogo
+```
+
+**Option 2: Install from source**
+
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/mema-inma-logo.git
+git clone https://github.com/johnaoga/mema-inma-logo.git
 cd mema-inma-logo
 
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Install in development mode
+pip install -e .
 
-# Install dependencies
-pip install -r requirements.txt
+# Or install with optional dependencies
+pip install -e ".[docs,dev]"
 ```
 
 ### Basic Usage
@@ -61,14 +68,17 @@ logo.generate(
 ### Command Line
 
 ```bash
-# Generate a logo
+# After pip install, use the meshedlogo command
+meshedlogo "YOUR TEXT" output/logo.png
+
+# Or if running from source
 python bin/generate_logo.py "YOUR TEXT" output/logo.png
 
-# Run examples
+# Run examples (source only)
 python bin/example_simple.py
 python bin/example_advanced.py
 
-# Run tests
+# Run tests (source only)
 python tests/run_tests.py
 ```
 
