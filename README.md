@@ -8,7 +8,7 @@ A professional Python system for generating beautiful triangle-meshed logos from
 
 **"MEMA & INMA forever"** - Originally created as a tribute in Euler's form: ME/IN e^(iθ)
 
-[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://YOUR_USERNAME.github.io/mema-inma-logo/)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://johnaoga.github.io/MeshedLogo/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -36,8 +36,8 @@ pip install meshedlogo
 
 ```bash
 # Clone the repository
-git clone https://github.com/johnaoga/mema-inma-logo.git
-cd mema-inma-logo
+git clone https://github.com/johnaoga/MeshedLogo.git
+cd MeshedLogo
 
 # Install in development mode
 pip install -e .
@@ -84,28 +84,28 @@ python tests/run_tests.py
 
 ## 📖 Documentation
 
-**[📚 Full Documentation](https://YOUR_USERNAME.github.io/mema-inma-logo/)**
+**[📚 Full Documentation](https://johnaoga.github.io/MeshedLogo/)**
 
-- [Quick Start Guide](https://YOUR_USERNAME.github.io/mema-inma-logo/quickstart.html) - Get started in minutes
-- [User Guide](https://YOUR_USERNAME.github.io/mema-inma-logo/user_guide.html) - Detailed usage and customization
-- [Technical Details](https://YOUR_USERNAME.github.io/mema-inma-logo/technical.html) - Architecture and algorithms
-- [Examples Showcase](https://YOUR_USERNAME.github.io/mema-inma-logo/examples.html) - Visual examples and code
-- [API Reference](https://YOUR_USERNAME.github.io/mema-inma-logo/api_reference.html) - Complete API documentation
+- [Quick Start Guide](https://johnaoga.github.io/MeshedLogo/quickstart.html) - Get started in minutes
+- [User Guide](https://johnaoga.github.io/MeshedLogo/user_guide.html) - Detailed usage and customization
+- [Technical Details](https://johnaoga.github.io/MeshedLogo/technical.html) - Architecture and algorithms
+- [Examples Showcase](https://johnaoga.github.io/MeshedLogo/examples.html) - Visual examples and code
+- [API Reference](https://johnaoga.github.io/MeshedLogo/api_reference.html) - Complete API documentation
 
 ## 🎨 Examples
 
 <p align="center">
-  <img src="test_output/board_logo.png" alt="BOARD Logo" width="600">
+  <img src="docs/_static/images/board_logo.png" alt="BOARD Logo" width="600">
   <br>
   <em>Multi-character logo with gradient colors and mesh wireframe</em>
 </p>
 
-See the [Examples page](https://YOUR_USERNAME.github.io/mema-inma-logo/examples.html) in the documentation for more examples and showcase.
+See the [Examples page](https://johnaoga.github.io/MeshedLogo/examples.html) in the documentation for more examples and showcase.
 
 ## 🏗️ Project Structure
 
 ```
-mema-inma-logo/
+MeshedLogo/
 ├── meshed_logo.py       # Main API class
 ├── lib/                 # Core library modules
 ├── bin/                 # CLI and example scripts
@@ -153,4 +153,4 @@ Created for MEMA & INMA. Feel free to use and modify for your own projects.
 
 ---
 
-**For detailed documentation, visit [https://YOUR_USERNAME.github.io/mema-inma-logo/](https://YOUR_USERNAME.github.io/mema-inma-logo/)**
+**For detailed documentation, visit [https://johnaoga.github.io/MeshedLogo/](https://johnaoga.github.io/MeshedLogo/)**
