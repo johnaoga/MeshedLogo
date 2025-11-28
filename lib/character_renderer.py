@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from typing import Tuple, Optional
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+import matplotlib.pyplot as plt
+import io
 import os
 
 
@@ -103,6 +105,74 @@ class CharacterRenderer:
         char_img = CharacterImage(
             matrix=binary_matrix,
             character=character,
+            width=w,
+            height=h,
+            thickness=t
+        )
+        
+        # Save if path is provided
+        if save_path:
+            char_img.save(save_path)
+        
+        return char_img
+    
+    def render_latex(self, latex_formula: str, width: Optional[int] = None,
+                    height: Optional[int] = None, thickness: Optional[int] = None,
+                    save_path: Optional[str] = None) -> CharacterImage:
+        """
+        Render a LaTeX formula to a binary image matrix using matplotlib.
+        This is ideal for SINGLE mode formula rendering with proper mathematical formatting.
+        
+        Args:
+            latex_formula: LaTeX formula string (without $ delimiters)
+            width: Desired image width (uses default if None)
+            height: Desired image height (uses default if None)
+            thickness: Font size factor (uses default if None)
+            save_path: Optional path to save the image
+            
+        Returns:
+            CharacterImage object containing the binary matrix
+            
+        Example:
+            render_latex(r'\frac{a}{b}') -> proper fraction with horizontal bar
+            render_latex(r'e^{i\theta}') -> e with superscript iθ
+        """
+        w = width or self.default_width
+        h = height or self.default_height
+        t = thickness or self.default_thickness
+        
+        # Calculate font size based on desired dimensions
+        fontsize = min(w, h) // 8 * t  # Scale with thickness
+        
+        # Render LaTeX using matplotlib
+        buf = io.BytesIO()
+        fig = plt.figure(figsize=(w/100, h/100), dpi=100)
+        ax = fig.add_subplot(111)
+        ax.axis('off')
+        ax.text(0.5, 0.5, f'${latex_formula}$', 
+               fontsize=fontsize, ha='center', va='center',
+               transform=ax.transAxes)
+        plt.savefig(buf, format='png', bbox_inches='tight', 
+                   transparent=True, pad_inches=0.1)
+        plt.close(fig)
+        
+        # Convert to PIL image
+        buf.seek(0)
+        img_pil = Image.open(buf).convert('L')
+        buf.close()
+        
+        # Resize to exact dimensions
+        img_pil = img_pil.resize((w, h), Image.Resampling.LANCZOS)
+        
+        # Convert to numpy array and normalize to binary
+        # Invert: matplotlib renders text as dark on light background
+        matrix = np.array(img_pil)
+        binary_matrix = (matrix > 127).astype(np.uint8)
+        
+        # Create CharacterImage object
+        char_img = CharacterImage(
+            matrix=binary_matrix,
+            character=latex_formula,
             width=w,
             height=h,
             thickness=t

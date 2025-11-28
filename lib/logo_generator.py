@@ -11,7 +11,7 @@ from matplotlib.patches import Polygon
 import os
 
 from lib.character_renderer import CharacterRenderer, CharacterImage
-from lib.string_processor import StringProcessor, RenderMode
+from lib.string_processor import StringProcessor, RenderMode, CharacterMetadata
 from lib.contour_extractor import ContourExtractor, ContourData
 from lib.mesh_generator import MeshGenerator, MeshData
 
@@ -26,6 +26,7 @@ class LogoComponent:
     contours: List[ContourData]
     meshes: List[MeshData]
     color_scheme: List[str]
+    metadata: List[CharacterMetadata] = None  # Positioning metadata for formulas
 
 
 @dataclass
@@ -221,9 +222,10 @@ class LogoGenerator:
         ax.invert_yaxis()  # Match image coordinate system (Y increases downward)
         ax.axis('off')
         
-        # Add title if needed
+        # Add title if needed (escape $ to prevent matplotlib from parsing as math)
         title_y = -20
-        ax.text(final_width / 2, title_y, logo.name,
+        safe_title = logo.name.replace('$', r'\$')
+        ax.text(final_width / 2, title_y, safe_title,
                fontsize=16, color='white', ha='center',
                style='italic', alpha=0.7)
         
@@ -371,6 +373,9 @@ class LogoGenerator:
         char_width = int(self.default_char_size[0] * scale)
         char_height = int(self.default_char_size[1] * scale)
         
+        # Get render mode from config (default to INDIVIDUAL)
+        render_mode = config.get('render_mode', RenderMode.INDIVIDUAL)
+        
         # Process text to get character images
         if is_formula:
             processed = self.string_processor.process_formula(
@@ -378,7 +383,7 @@ class LogoGenerator:
             )
         else:
             processed = self.string_processor.process(
-                text, mode=RenderMode.INDIVIDUAL,
+                text, mode=render_mode,
                 width=char_width, height=char_height
             )
         
@@ -463,7 +468,8 @@ class LogoGenerator:
             char_images=processed.images,
             contours=contours,
             meshes=meshes,
-            color_scheme=colors
+            color_scheme=colors,
+            metadata=processed.metadata
         )
     
     def _render_component(self, ax: plt.Axes, component: LogoComponent,
@@ -474,24 +480,43 @@ class LogoGenerator:
         """Render a single logo component"""
         import random
         base_x, base_y = component.position
-        char_spacing = component.scale * 150  # Spacing between characters
+        
+        # Track cumulative x position for proper spacing
+        cumulative_x = 0
         
         for i, (mesh, char_img) in enumerate(zip(component.meshes, component.char_images)):
             if mesh is None:
                 continue
             
+            # Get metadata for this character if available
+            metadata = component.metadata[i] if component.metadata and i < len(component.metadata) else None
+            
             # Calculate character position
-            char_x = base_x + i * char_spacing
+            char_x = base_x + cumulative_x
             char_y = base_y
+            
+            # Apply vertical offset for superscripts/subscripts
+            if metadata and metadata.y_offset_factor != 0:
+                y_offset = metadata.y_offset_factor * component.scale * 100  # Scale offset
+                char_y += y_offset
             
             # Transform mesh points to canvas coordinates
             transformed_points = mesh.points.copy()
             
             # Scale and translate
-            scale_factor = component.scale * 0.5
+            # Apply metadata scale if available
+            if metadata and metadata.scale_factor != 1.0:
+                scale_factor = component.scale * 0.5 * metadata.scale_factor
+            else:
+                scale_factor = component.scale * 0.5
+            
             transformed_points *= scale_factor
             transformed_points[:, 0] += char_x
             transformed_points[:, 1] += char_y
+            
+            # Update cumulative position for next character
+            char_width = (transformed_points[:, 0].max() - transformed_points[:, 0].min())
+            cumulative_x += char_width + component.scale * 10  # Add small spacing
             
             # Select colors for this character
             color_idx = i % len(component.color_scheme)
