@@ -287,6 +287,81 @@ Mesh the background instead of the character:
 
 This is useful for creating negative space logos or special effects.
 
+LaTeX Formula Support
+---------------------
+
+MeshedLogo supports rendering mathematical formulas using LaTeX syntax. Wrap your formula in ``$...$`` delimiters.
+
+Basic Formulas
+~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from meshed_logo import MeshedLogo
+
+   logo = MeshedLogo()
+
+   # Euler's formula
+   logo.generate("$e^{i\\theta}$", output_file="euler.png")
+
+   # Einstein's equation
+   logo.generate("$E=mc^2$", output_file="einstein.png")
+
+   # Fractions
+   logo.generate("$\\frac{a}{b}$", output_file="fraction.png")
+
+   # Subscripts and superscripts
+   logo.generate("$x_1 + y_2$", output_file="subscripts.png")
+
+Complex Formulas
+~~~~~~~~~~~~~~~~
+
+For complex formulas with multiple elements, use the ``RenderMode.SINGLE`` mode to render the entire formula as one image:
+
+.. code-block:: python
+
+   from lib.string_processor import RenderMode
+   from lib.logo_generator import LogoGenerator
+
+   generator = LogoGenerator(canvas_size=(1200, 600))
+
+   components = [{
+       'text': '$\\frac{\\text{ME}}{\\text{IN}}e^{i\\theta}$',
+       'position': (300, 300),
+       'scale': 3.0,
+       'colors': ['cyan', 'magenta', 'yellow'],
+       'render_mode': RenderMode.SINGLE
+   }]
+
+   logo = generator.create_logo('Formula', components)
+   generator.render_logo(logo, 'output/formula.png')
+
+Supported LaTeX Commands
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following LaTeX commands are supported via matplotlib's mathtext engine:
+
+- **Superscripts**: ``x^2``, ``e^{i\\theta}``
+- **Subscripts**: ``x_1``, ``a_{ij}``
+- **Fractions**: ``\\frac{a}{b}``
+- **Greek letters**: ``\\alpha``, ``\\beta``, ``\\theta``, ``\\pi``
+- **Operators**: ``\\times``, ``\\pm``, ``\\sum``, ``\\int``
+- **Text in formulas**: ``\\text{word}``
+- **Square roots**: ``\\sqrt{x}``
+
+Mixed Text and Formulas
+~~~~~~~~~~~~~~~~~~~~~~~
+
+You can mix regular text with formulas:
+
+.. code-block:: python
+
+   # 'm' + formula 'e' + 'sh' = "mesh" with styled 'e'
+   logo.generate("m$e$sh", output_file="mesh_formula.png")
+
+   # Text with formula
+   logo.generate("E=$mc^2$", output_file="einstein_full.png")
+
 Advanced Usage
 --------------
 

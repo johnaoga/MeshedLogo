@@ -8,11 +8,11 @@ Architecture Overview
 
 MeshedLogo uses a modular pipeline architecture with 5 independent components:
 
-1. **CharacterRenderer** - Renders characters to binary images
-2. **StringProcessor** - Processes strings and formulas
-3. **ContourExtractor** - Extracts outline points from images
-4. **MeshGenerator** - Creates triangle meshes from points
-5. **LogoGenerator** - Orchestrates all components
+1. **CharacterRenderer** - Renders characters and LaTeX formulas to binary images
+2. **StringProcessor** - Processes strings, detects formulas, and manages render modes
+3. **ContourExtractor** - Extracts outline points and holes from images
+4. **MeshGenerator** - Creates triangle meshes from points using Delaunay triangulation
+5. **LogoGenerator** - Orchestrates all components and renders final output
 
 The Pipeline
 ------------
@@ -48,6 +48,45 @@ The image above shows the complete rendering pipeline for the letter 'M':
    renderer = CharacterRenderer(default_width=200, default_height=200)
    char_img = renderer.render('M')
    # Returns CharacterImage with binary matrix
+
+LaTeX Formula Rendering
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For mathematical formulas, the system uses matplotlib's mathtext engine:
+
+1. **Formula Detection**: Text wrapped in ``$...$`` is detected as a formula
+2. **LaTeX Parsing**: matplotlib's mathtext parses LaTeX commands
+3. **Image Generation**: Formula is rendered to a binary image
+4. **Multi-Shape Extraction**: Complex formulas may contain multiple disconnected shapes
+
+**Render Modes:**
+
+- ``RenderMode.INDIVIDUAL``: Each character rendered separately (default for simple text)
+- ``RenderMode.SINGLE``: Entire formula rendered as one image (for complex LaTeX)
+
+**Implementation:**
+
+.. code-block:: python
+
+   from lib.character_renderer import CharacterRenderer
+
+   renderer = CharacterRenderer()
+
+   # Render a LaTeX formula
+   formula_img = renderer.render_latex(r'e^{i\theta}')
+   # Returns CharacterImage with the complete formula
+
+   # Render a fraction
+   fraction_img = renderer.render_latex(r'\frac{a}{b}')
+
+**Iterative Shape Extraction:**
+
+For formulas with multiple disconnected parts (e.g., ``=`` has two lines, ``i`` has body and dot), the system uses iterative extraction:
+
+1. Find the largest contour and its holes
+2. Mask out the found shape from the image
+3. Repeat until no more shapes are found
+4. Each shape becomes a separate mesh preserving relative positions
 
 Step 2: Contour Extraction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

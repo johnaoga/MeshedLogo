@@ -69,6 +69,24 @@ Multi-Component Logo
 
    logo.generate_multi(components, output_file="output/multi.png")
 
+LaTeX Formulas
+~~~~~~~~~~~~~~
+
+Render mathematical formulas using LaTeX syntax:
+
+.. code-block:: python
+
+   logo = MeshedLogo()
+
+   # Euler's formula
+   logo.generate("$e^{i\\theta}$", output_file="output/euler.png")
+
+   # Einstein's equation
+   logo.generate("$E=mc^2$", output_file="output/einstein.png")
+
+   # Fractions
+   logo.generate("$\\frac{a}{b}$", output_file="output/fraction.png")
+
 MEMA & INMA Classic
 ~~~~~~~~~~~~~~~~~~~
 

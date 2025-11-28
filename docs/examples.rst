@@ -368,6 +368,94 @@ Example 5: MEMA & INMA Classic
 
 The original tribute logo with the mathematical formula rendering.
 
+LaTeX Formula Examples
+----------------------
+
+MeshedLogo supports rendering mathematical formulas using LaTeX syntax.
+
+Example 6: Euler's Formula
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   logo = MeshedLogo()
+   logo.generate(
+       "$e^{i\\theta}$",
+       output_file="euler.png",
+       colors=['cyan', 'magenta', 'yellow'],
+       scale=3.0
+   )
+
+Renders Euler's famous formula with superscript notation.
+
+Example 7: Einstein's Equation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   logo = MeshedLogo()
+   logo.generate(
+       "$E=mc^2$",
+       output_file="einstein.png",
+       colors=['yellow', 'white'],
+       scale=2.5
+   )
+
+The famous mass-energy equivalence formula.
+
+Example 8: Fractions
+~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   logo = MeshedLogo()
+   logo.generate(
+       "$\\frac{a}{b}$",
+       output_file="fraction.png",
+       colors=['cyan', 'magenta'],
+       scale=3.0
+   )
+
+Proper fraction rendering with horizontal bar.
+
+Example 9: Complex Formula
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from lib.string_processor import RenderMode
+   from lib.logo_generator import LogoGenerator
+
+   generator = LogoGenerator(canvas_size=(1200, 600))
+
+   components = [{
+       'text': '$\\frac{\\text{ME}}{\\text{IN}}e^{i\\theta}$',
+       'position': (300, 300),
+       'scale': 3.0,
+       'colors': ['cyan', 'magenta', 'yellow'],
+       'render_mode': RenderMode.SINGLE
+   }]
+
+   logo = generator.create_logo('MEMA-INMA Formula', components)
+   generator.render_logo(logo, 'output/mema_formula.png')
+
+The complete MEMA/INMA tribute formula with fraction and Euler notation.
+
+Example 10: Mixed Text and Formula
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   logo = MeshedLogo()
+   logo.generate(
+       "m$e$sh",
+       output_file="mesh_styled.png",
+       colors=['cyan', 'yellow'],
+       scale=2.5
+   )
+
+Mix regular text with formula-styled characters.
+
 Command Line Examples
 ---------------------
 
