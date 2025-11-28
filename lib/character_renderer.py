@@ -161,7 +161,7 @@ class CharacterRenderer:
         img_pil = Image.open(buf).convert('L')
         buf.close()
         
-        # Resize to exact dimensions
+        # Resize to exact dimensions requested
         img_pil = img_pil.resize((w, h), Image.Resampling.LANCZOS)
         
         # Convert to numpy array and normalize to binary

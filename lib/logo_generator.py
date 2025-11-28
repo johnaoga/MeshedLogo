@@ -290,20 +290,12 @@ class LogoGenerator:
             },
             # e^(iθ) formula
             {
-                'text': 'e',
+                'text': '$$e^{i\theta}$$',
                 'position': (600, 400),
                 'scale': 1.8,
                 'colors': ['yellow', 'white'],
                 'is_formula': True,
                 'mesh_density': 1.2
-            },
-            {
-                'text': 'iθ',
-                'position': (730, 500),
-                'scale': 1.0,
-                'colors': ['cyan', 'magenta'],
-                'is_formula': True,
-                'mesh_density': 1.0
             }
         ]
         
@@ -435,27 +427,30 @@ class LogoGenerator:
                     contours.append(None)
                     meshes.append(None)
             else:
-                # NORMAL MODE: Mesh the character
-                # Extract contours WITH openings detection (detects holes AND openings like 'C', 'U', 'H')
-                largest_contour, all_holes = self.contour_extractor.extract_with_openings(
-                    char_img.matrix, threshold=127, simplify=True, epsilon=3.0
+                # NORMAL MODE: Mesh the character(s)
+                # Use extract_all_shapes_with_openings to handle images with multiple
+                # disconnected shapes (like formulas rendered as single images)
+                all_shapes = self.contour_extractor.extract_all_shapes_with_openings(
+                    char_img.matrix, threshold=127, simplify=True, epsilon=3.0, min_area=50
                 )
                 
-                if largest_contour:
-                    contours.append(largest_contour)
-                    
-                    # Extract holes list
-                    holes_list = [hole.points for hole in all_holes] if all_holes else None
-                    
-                    # Generate mesh with ALL holes (traditional + openings)
-                    mesh = self.mesh_generator.generate(
-                        largest_contour.points,
-                        add_interior_points=True,
-                        num_interior_points=int(30 * mesh_density),
-                        holes=holes_list,
-                        character_image=char_img.matrix  # Still use for triangle filtering
-                    )
-                    meshes.append(mesh)
+                if all_shapes:
+                    # Process each shape found in the image
+                    for shape_contour, shape_holes in all_shapes:
+                        contours.append(shape_contour)
+                        
+                        # Extract holes list
+                        holes_list = [hole.points for hole in shape_holes] if shape_holes else None
+                        
+                        # Generate mesh with holes
+                        mesh = self.mesh_generator.generate(
+                            shape_contour.points,
+                            add_interior_points=True,
+                            num_interior_points=int(30 * mesh_density),
+                            holes=holes_list,
+                            character_image=char_img.matrix
+                        )
+                        meshes.append(mesh)
                 else:
                     # Empty contour/mesh
                     contours.append(None)
@@ -481,42 +476,72 @@ class LogoGenerator:
         import random
         base_x, base_y = component.position
         
-        # Track cumulative x position for proper spacing
+        # Track cumulative x position for proper spacing between separate char_images
         cumulative_x = 0
         
-        for i, (mesh, char_img) in enumerate(zip(component.meshes, component.char_images)):
+        # Track which char_image each mesh belongs to
+        # When multiple meshes come from one image, they should preserve relative positions
+        current_char_img_idx = -1
+        char_img_base_x = 0
+        
+        # Note: meshes may be more than char_images when a single image contains
+        # multiple shapes (e.g., formulas rendered as one image with multiple characters)
+        for i, mesh in enumerate(component.meshes):
             if mesh is None:
                 continue
+            
+            # Determine which char_image this mesh belongs to
+            # For formula images with multiple shapes, contours list tracks the mapping
+            char_img_idx = 0
+            if len(component.char_images) == 1:
+                # All meshes from single image - preserve relative positions
+                char_img_idx = 0
+            else:
+                # Multiple images - find which one this mesh belongs to
+                # This is approximate: assume meshes are distributed across images
+                char_img_idx = min(i, len(component.char_images) - 1)
             
             # Get metadata for this character if available
             metadata = component.metadata[i] if component.metadata and i < len(component.metadata) else None
             
-            # Calculate character position
-            char_x = base_x + cumulative_x
-            char_y = base_y
-            
-            # Apply vertical offset for superscripts/subscripts
-            if metadata and metadata.y_offset_factor != 0:
-                y_offset = metadata.y_offset_factor * component.scale * 100  # Scale offset
-                char_y += y_offset
+            # Check if we're starting a new char_image
+            if char_img_idx != current_char_img_idx:
+                current_char_img_idx = char_img_idx
+                char_img_base_x = cumulative_x
             
             # Transform mesh points to canvas coordinates
             transformed_points = mesh.points.copy()
             
-            # Scale and translate
-            # Apply metadata scale if available
+            # Scale factor
             if metadata and metadata.scale_factor != 1.0:
                 scale_factor = component.scale * 0.5 * metadata.scale_factor
             else:
                 scale_factor = component.scale * 0.5
             
-            transformed_points *= scale_factor
-            transformed_points[:, 0] += char_x
-            transformed_points[:, 1] += char_y
-            
-            # Update cumulative position for next character
-            char_width = (transformed_points[:, 0].max() - transformed_points[:, 0].min())
-            cumulative_x += char_width + component.scale * 10  # Add small spacing
+            # For single-image formulas, preserve relative positions
+            if len(component.char_images) == 1:
+                # Scale points (they already have correct relative positions from the image)
+                transformed_points *= scale_factor
+                # Translate to base position
+                transformed_points[:, 0] += base_x
+                transformed_points[:, 1] += base_y
+            else:
+                # Multiple images - use cumulative positioning
+                char_x = base_x + char_img_base_x
+                char_y = base_y
+                
+                # Apply vertical offset for superscripts/subscripts
+                if metadata and metadata.y_offset_factor != 0:
+                    y_offset = metadata.y_offset_factor * component.scale * 100
+                    char_y += y_offset
+                
+                transformed_points *= scale_factor
+                transformed_points[:, 0] += char_x
+                transformed_points[:, 1] += char_y
+                
+                # Update cumulative position for next character
+                char_width = (transformed_points[:, 0].max() - transformed_points[:, 0].min())
+                cumulative_x = char_img_base_x + char_width + component.scale * 10
             
             # Select colors for this character
             color_idx = i % len(component.color_scheme)

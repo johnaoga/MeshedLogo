@@ -421,6 +421,99 @@ class ContourExtractor:
         
         return largest_contour, holes
     
+    def extract_all_shapes_with_openings(self, image_input, threshold: int = 127,
+                                         simplify: bool = False, epsilon: float = 2.0,
+                                         min_area: int = 50) -> List[Tuple[ContourData, List[ContourData]]]:
+        """
+        Extract ALL shapes from an image, each with their holes.
+        Uses the same algorithm as extract_with_openings but iteratively finds
+        all disconnected shapes (useful for formulas with multiple characters).
+        
+        Args:
+            image_input: Image input (various formats supported)
+            threshold: Threshold value for binarization
+            simplify: Whether to simplify contours
+            epsilon: Simplification tolerance
+            min_area: Minimum contour area to include (filters noise)
+            
+        Returns:
+            List of tuples: [(contour, holes), ...] for each shape, sorted left-to-right
+        """
+        # Load and binarize image
+        img_array = self._load_image(image_input)
+        binary = self._binarize(img_array, threshold)
+        
+        # Work on a copy that we'll modify as we find shapes
+        remaining = binary.copy()
+        
+        results = []
+        max_iterations = 50  # Safety limit
+        
+        for _ in range(max_iterations):
+            # Check if there's any content left
+            if np.sum(remaining == 255) < min_area:
+                break
+            
+            # Find all contours in remaining image
+            all_contours = self.extract(remaining, threshold, simplify, epsilon)
+            if not all_contours:
+                break
+            
+            # Get largest contour (next shape to process)
+            largest_contour = max(all_contours, key=lambda c: c.num_points)
+            
+            # Check minimum area
+            area = cv2.contourArea(largest_contour.points.astype(np.int32))
+            if area < min_area:
+                # Mask out this small contour and continue
+                cv2.fillPoly(remaining, [largest_contour.points.astype(np.int32)], 0)
+                continue
+            
+            # Find holes for this shape using convex hull method
+            hull = cv2.convexHull(largest_contour.points.astype(np.int32))
+            
+            # Fill the convex hull
+            filled_hull = np.zeros_like(binary)
+            cv2.fillConvexPoly(filled_hull, hull, 255)
+            
+            # Find gaps: background pixels inside the convex hull (in original binary)
+            gaps = (filled_hull == 255) & (binary == 0)
+            
+            # Find contours of all gaps
+            gap_contours, _ = cv2.findContours(
+                gaps.astype(np.uint8) * 255,
+                cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
+            
+            holes = []
+            for contour in gap_contours:
+                if len(contour) >= 3:
+                    points = contour.reshape(-1, 2)
+                    if simplify:
+                        contour_reshaped = points.reshape(-1, 1, 2).astype(np.float32)
+                        simplified = cv2.approxPolyDP(contour_reshaped, epsilon, True)
+                        points = simplified.reshape(-1, 2)
+                    
+                    hole_data = ContourData(
+                        points=points,
+                        image_shape=binary.shape,
+                        num_points=len(points),
+                        is_closed=True
+                    )
+                    holes.append(hole_data)
+            
+            # Add this shape to results
+            results.append((largest_contour, holes))
+            
+            # Mask out this shape from remaining image
+            # Use the convex hull to ensure we remove the entire shape including holes
+            cv2.fillConvexPoly(remaining, hull, 0)
+        
+        # Sort results by x-coordinate (left to right)
+        results.sort(key=lambda x: x[0].points[:, 0].min())
+        
+        return results
+    
     def _resample_contour(self, points: np.ndarray, num_points: int) -> np.ndarray:
         """Resample contour to have specific number of points"""
         if len(points) == num_points:

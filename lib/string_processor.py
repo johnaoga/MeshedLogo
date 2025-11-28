@@ -117,8 +117,11 @@ class StringProcessor:
         
         for segment in segments:
             if segment.is_formula:
-                # Process as formula using FormulaParser
-                if mode == RenderMode.SINGLE:
+                # Auto-detect if formula has LaTeX syntax that requires SINGLE mode
+                has_latex_syntax = self._has_latex_syntax(segment.text)
+                use_single_mode = (mode == RenderMode.SINGLE) or has_latex_syntax
+                
+                if use_single_mode:
                     # Render entire formula as single image using matplotlib LaTeX
                     img = self.renderer.render_latex(
                         latex_formula=segment.text,
@@ -136,7 +139,7 @@ class StringProcessor:
                     ))
                 else:
                     # INDIVIDUAL mode: Render each character separately
-                    # For complex formulas, use SINGLE mode instead
+                    # Only for simple formulas without LaTeX syntax
                     for char in segment.text:
                         if not char.strip():  # Skip whitespace
                             continue
@@ -261,6 +264,25 @@ class StringProcessor:
             processed.save_all(save_dir, prefix="formula")
         
         return processed
+    
+    def _has_latex_syntax(self, formula_text: str) -> bool:
+        """
+        Detect if formula text contains LaTeX syntax that requires SINGLE mode rendering.
+        
+        Args:
+            formula_text: Formula text to check
+            
+        Returns:
+            True if LaTeX syntax detected, False otherwise
+        """
+        latex_indicators = [
+            '^',      # Superscripts
+            '_',      # Subscripts
+            '\\',     # LaTeX commands (\theta, \frac, etc.)
+            '{',      # Grouping (often with superscripts/subscripts)
+            '}',      # Grouping
+        ]
+        return any(indicator in formula_text for indicator in latex_indicators)
     
     def _split_text_and_formulas(self, text: str) -> List[TextSegment]:
         r"""
