@@ -1,7 +1,7 @@
 MeshedLogo - Triangle Mesh Logo Generator
 ==========================================
 
-.. image:: _static/images/much_logo.png
+.. image:: _static/images/meshed_logo.png
    :align: center
    :alt: MeshedLogo Example
 
