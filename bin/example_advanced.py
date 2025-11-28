@@ -3,13 +3,19 @@ Example Usage Script
 Demonstrates how to use the logo generation system
 """
 
+import os
+import sys
 import random
 import numpy as np
-from character_renderer import CharacterRenderer
-from string_processor import StringProcessor
-from contour_extractor import ContourExtractor
-from mesh_generator import MeshGenerator
-from logo_generator import LogoGenerator
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from lib.character_renderer import CharacterRenderer
+from lib.string_processor import StringProcessor, RenderMode
+from lib.contour_extractor import ContourExtractor
+from lib.mesh_generator import MeshGenerator
+from lib.logo_generator import LogoGenerator
 
 
 def example_1_render_single_character():
@@ -139,17 +145,22 @@ def example_5_complete_logo():
         output_dir='output'
     )
     print(f"✓ MEMA & INMA logo generated: {len(mema_logo.components)} components")
-    print(f"  Saved to: output/example_5_mema_inma.png")
+    print("  Saved to: output/example_5_mema_inma.png")
     
-    # Generate simple text logo
+    # Generate simple text logo using create_logo
     print("\nGenerating simple text logo...")
-    text_logo = generator.create_simple_text_logo(
-        text='LOGO',
-        output_file='output/example_5_logo.png',
-        color_scheme=['cyan', 'magenta', 'yellow', 'white']
-    )
+    components_config = [{
+        'text': 'LOGO',
+        'position': (100, 300),
+        'scale': 2.5,
+        'colors': ['cyan', 'magenta', 'yellow', 'white'],
+        'is_formula': False,
+        'mesh_density': 1.5
+    }]
+    text_logo = generator.create_logo('LOGO', components_config)
+    generator.render_logo(text_logo, 'output/example_5_logo.png')
     print(f"✓ Text logo 'LOGO' generated: {len(text_logo.components)} components")
-    print(f"  Saved to: output/example_5_logo.png")
+    print("  Saved to: output/example_5_logo.png")
     
     print()
 
@@ -193,9 +204,9 @@ def example_6_custom_logo():
     print(f"✓ Custom logo generated with {len(logo.components)} components")
     print(f"  Saved to: output/example_6_custom.png")
     
-    # Save metadata
-    logo.save_metadata('output/example_6_metadata.txt')
-    print(f"✓ Metadata saved to: output/example_6_metadata.txt")
+    # Print logo info
+    print(f"  Canvas size: {logo.canvas_size}")
+    print(f"  Background: {logo.background_color}")
     
     print()
 
@@ -257,7 +268,6 @@ def main():
     np.random.seed(42)
     
     # Create output directory
-    import os
     os.makedirs('output', exist_ok=True)
     
     # Run examples
