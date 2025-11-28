@@ -130,22 +130,49 @@ class LogoGenerator:
         
         for component in logo.components:
             base_x, base_y = component.position
-            char_spacing = component.scale * 150
             scale_factor = component.scale * 0.5
+            
+            # Track cumulative position for multi-image components
+            cumulative_x = 0
+            current_char_img_idx = -1
+            char_img_base_x = 0
             
             for i, mesh in enumerate(component.meshes):
                 if mesh is None:
                     continue
                 
-                # Calculate character position
-                char_x = base_x + i * char_spacing
-                char_y = base_y
+                # Determine which char_image this mesh belongs to
+                char_img_idx = 0
+                if len(component.char_images) == 1:
+                    char_img_idx = 0
+                else:
+                    char_img_idx = min(i, len(component.char_images) - 1)
                 
-                # Transform mesh points
+                # Check if we're starting a new char_image
+                if char_img_idx != current_char_img_idx:
+                    current_char_img_idx = char_img_idx
+                    char_img_base_x = cumulative_x
+                
+                # Transform mesh points - must match _render_component logic
                 transformed_points = mesh.points.copy()
-                transformed_points *= scale_factor
-                transformed_points[:, 0] += char_x
-                transformed_points[:, 1] += char_y
+                
+                if len(component.char_images) == 1:
+                    # Single image - preserve relative positions
+                    transformed_points *= scale_factor
+                    transformed_points[:, 0] += base_x
+                    transformed_points[:, 1] += base_y
+                else:
+                    # Multiple images - use cumulative positioning
+                    char_x = base_x + char_img_base_x
+                    char_y = base_y
+                    
+                    transformed_points *= scale_factor
+                    transformed_points[:, 0] += char_x
+                    transformed_points[:, 1] += char_y
+                    
+                    # Update cumulative position
+                    char_width = (transformed_points[:, 0].max() - transformed_points[:, 0].min())
+                    cumulative_x = char_img_base_x + char_width + component.scale * 10
                 
                 # Update bounds
                 min_x = min(min_x, transformed_points[:, 0].min())
@@ -255,47 +282,40 @@ class LogoGenerator:
             # ME (numerator)
             {
                 'text': 'ME',
-                'position': (100, 500),
+                'position': (100, 200),
                 'scale': 2.0,
                 'colors': ['magenta', 'cyan'],
                 'is_formula': False,
-                'mesh_density': 1.5
-            },
-            # Fraction bar
-            {
-                'text': '/',
-                'position': (400, 400),
-                'scale': 1.5,
-                'colors': ['white'],
-                'is_formula': False,
-                'mesh_density': 0.5
+                'mesh_density': 3.0
             },
             # IN (denominator)
             {
                 'text': 'IN',
-                'position': (100, 200),
-                'scale': 2.0,
+                'position': (100, 500),
+                'scale': 2.3,
                 'colors': ['blue', 'cyan'],
                 'is_formula': False,
-                'mesh_density': 1.5
+                'mesh_density': 1.8
             },
             # Multiplication sign
             {
-                'text': '×',
+                'text': '$\\times$',
                 'position': (500, 350),
                 'scale': 1.2,
                 'colors': ['yellow'],
                 'is_formula': False,
-                'mesh_density': 0.8
+                'mesh_density': 0.8,
+                'render_mode': RenderMode.SINGLE
             },
             # e^(iθ) formula
             {
-                'text': '$$e^{i\theta}$$',
-                'position': (600, 400),
-                'scale': 1.8,
+                'text': '$e^{i\\theta}$',
+                'position': (500, 0),
+                'scale': 3.5,
                 'colors': ['yellow', 'white'],
-                'is_formula': True,
-                'mesh_density': 1.2
+                'is_formula': False,
+                'mesh_density': 2.2,
+                'render_mode': RenderMode.SINGLE
             }
         ]
         
@@ -305,7 +325,7 @@ class LogoGenerator:
         # Render
         output_path = os.path.join(output_dir, output_file)
         self.render_logo(logo, output_path, show_wireframe=True,
-                        show_vertices=True, show_gradient=True)
+                        show_vertices=True, show_gradient=False)
         
         # Save metadata
         metadata_path = os.path.join(output_dir, 'logo_metadata.txt')

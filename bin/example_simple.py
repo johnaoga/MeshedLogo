@@ -59,7 +59,7 @@ def example_3_multi_component():
         },
         {
             'text': 'LOGO',
-            'position': (800, 400),
+            'position': (400, 900),
             'scale': 2.5,
             'colors': ['yellow', 'white'],
             'mesh_density': 2.0

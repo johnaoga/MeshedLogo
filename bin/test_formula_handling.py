@@ -104,7 +104,7 @@ def test_5_fraction_single_mode():
     
     # Use SINGLE mode for proper fraction rendering
     components_config = [{
-        'text': '$\\frac{a}{b}$',
+        'text': '$\\frac{\\text{ME}}{\\text{IN}}e^{i\\theta}$',
         'position': (300, 300),
         'scale': 3.0,
         'colors': ['yellow', 'cyan', 'magenta'],
@@ -178,14 +178,14 @@ def test_7_multi_component_formulas():
             'mesh_density': 1.5
         },
         {
-            'text': '×',
+            'text': '$\\times$',
             'position': (500, 350),
             'scale': 1.2,
             'colors': ['yellow'],
             'mesh_density': 0.8
         },
         {
-            'text': 'INMA',
+            'text': '$e^{i\\theta}$',
             'position': (650, 350),
             'scale': 1.8,
             'colors': ['yellow', 'white'],
