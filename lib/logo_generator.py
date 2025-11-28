@@ -114,6 +114,46 @@ class LogoGenerator:
         
         return logo
     
+    def _calculate_content_bounds(self, logo: Logo) -> Tuple[float, float, float, float]:
+        """
+        Calculate the bounding box of all rendered content
+        
+        Args:
+            logo: Logo object
+            
+        Returns:
+            Tuple of (min_x, min_y, max_x, max_y)
+        """
+        min_x, min_y = float('inf'), float('inf')
+        max_x, max_y = float('-inf'), float('-inf')
+        
+        for component in logo.components:
+            base_x, base_y = component.position
+            char_spacing = component.scale * 150
+            scale_factor = component.scale * 0.5
+            
+            for i, mesh in enumerate(component.meshes):
+                if mesh is None:
+                    continue
+                
+                # Calculate character position
+                char_x = base_x + i * char_spacing
+                char_y = base_y
+                
+                # Transform mesh points
+                transformed_points = mesh.points.copy()
+                transformed_points *= scale_factor
+                transformed_points[:, 0] += char_x
+                transformed_points[:, 1] += char_y
+                
+                # Update bounds
+                min_x = min(min_x, transformed_points[:, 0].min())
+                min_y = min(min_y, transformed_points[:, 1].min())
+                max_x = max(max_x, transformed_points[:, 0].max())
+                max_y = max(max_y, transformed_points[:, 1].max())
+        
+        return min_x, min_y, max_x, max_y
+    
     def render_logo(self, logo: Logo, output_file: str,
                    show_wireframe: bool = True,
                    show_vertices: bool = True,
@@ -137,6 +177,33 @@ class LogoGenerator:
         Returns:
             Path to saved file
         """
+        # Calculate actual content bounds
+        min_x, min_y, max_x, max_y = self._calculate_content_bounds(logo)
+        
+        # Add padding around content
+        padding = 50
+        content_width = max_x - min_x + 2 * padding
+        content_height = max_y - min_y + 2 * padding
+        
+        # Determine final canvas size
+        original_width, original_height = logo.canvas_size
+        final_width = max(original_width, content_width)
+        final_height = max(original_height, content_height)
+        
+        # Print warning if canvas size was adjusted
+        if final_width > original_width or final_height > original_height:
+            print(f"⚠️  Canvas size adjusted from ({original_width}, {original_height}) "
+                  f"to ({int(final_width)}, {int(final_height)}) to fit all content")
+        
+        # Calculate centering offset
+        offset_x = (final_width - (max_x - min_x)) / 2 - min_x
+        offset_y = (final_height - (max_y - min_y)) / 2 - min_y
+        
+        # Adjust component positions for centering
+        for component in logo.components:
+            component.position = (component.position[0] + offset_x, 
+                                component.position[1] + offset_y)
+        
         fig, ax = plt.subplots(1, 1, figsize=(12, 8), facecolor=logo.background_color)
         ax.set_facecolor(logo.background_color)
         ax.set_aspect('equal')
@@ -148,15 +215,15 @@ class LogoGenerator:
                                  wireframe_thickness, vertex_size,
                                  vertex_mode, show_gradient)
         
-        # Set canvas limits
-        ax.set_xlim(0, logo.canvas_size[0])
-        ax.set_ylim(0, logo.canvas_size[1])
+        # Set canvas limits to final size
+        ax.set_xlim(0, final_width)
+        ax.set_ylim(0, final_height)
         ax.invert_yaxis()  # Match image coordinate system (Y increases downward)
         ax.axis('off')
         
         # Add title if needed
         title_y = -20
-        ax.text(logo.canvas_size[0] / 2, title_y, logo.name,
+        ax.text(final_width / 2, title_y, logo.name,
                fontsize=16, color='white', ha='center',
                style='italic', alpha=0.7)
         
