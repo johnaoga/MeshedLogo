@@ -5,6 +5,11 @@ on:
     branches:
       - main
       - master
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -26,19 +31,24 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
 
-      - name: Install dependencies
+      - name: Install fonts (used by CharacterRenderer)
+        run: sudo apt-get update -q && sudo apt-get install -y -q fonts-dejavu-core
+
+      - name: Install package and docs dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install sphinx sphinx-rtd-theme myst-parser
+          pip install -e ".[docs]"
+
+      - name: Generate example images and examples.rst
+        run: python docs/generate_examples.py
 
       - name: Build documentation
         run: |
           cd docs
-          sphinx-build -b html . _build/html
+          sphinx-build -b html -W --keep-going . _build/html
           touch _build/html/.nojekyll
 
       - name: Upload artifact
@@ -47,6 +57,7 @@ jobs:
           path: docs/_build/html
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

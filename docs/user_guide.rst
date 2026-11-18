@@ -10,7 +10,7 @@ The ``MeshedLogo`` class is the main user-facing interface. Import it from the p
 
 .. code-block:: python
 
-   from meshed_logo import MeshedLogo
+   from meshedlogo import MeshedLogo
 
    logo = MeshedLogo(
        canvas_size=(1200, 800),
@@ -156,19 +156,19 @@ Generate a multi-component logo with multiple text elements.
 
 .. code-block:: python
 
-   logo = MeshedLogo(canvas_size=(1400, 700))
+   logo = MeshedLogo(canvas_size=(2400, 700))
 
    components = [
        {
            'text': 'MESHED',
            'position': (100, 400),
-           'scale': 2.5,
+           'scale': 2.0,
            'colors': ['cyan', 'magenta']
        },
        {
            'text': 'LOGO',
-           'position': (800, 400),
-           'scale': 2.5,
+           'position': (1600, 400),
+           'scale': 2.0,
            'colors': ['yellow', 'white']
        }
    ]
@@ -297,7 +297,7 @@ Basic Formulas
 
 .. code-block:: python
 
-   from meshed_logo import MeshedLogo
+   from meshedlogo import MeshedLogo
 
    logo = MeshedLogo()
 
@@ -320,8 +320,8 @@ For complex formulas with multiple elements, use the ``RenderMode.SINGLE`` mode 
 
 .. code-block:: python
 
-   from lib.string_processor import RenderMode
-   from lib.logo_generator import LogoGenerator
+   from meshedlogo.string_processor import RenderMode
+   from meshedlogo.logo_generator import LogoGenerator
 
    generator = LogoGenerator(canvas_size=(1200, 600))
 
@@ -368,13 +368,13 @@ Advanced Usage
 Using Individual Modules
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-For advanced use cases, you can import and use individual modules from ``lib/``:
+For advanced use cases, you can import and use the individual modules of the ``meshedlogo`` package:
 
 .. code-block:: python
 
-   from lib.character_renderer import CharacterRenderer
-   from lib.contour_extractor import ContourExtractor
-   from lib.mesh_generator import MeshGenerator
+   from meshedlogo.character_renderer import CharacterRenderer
+   from meshedlogo.contour_extractor import ContourExtractor
+   from meshedlogo.mesh_generator import MeshGenerator
 
    # Render a character
    renderer = CharacterRenderer(default_width=200, default_height=200)
@@ -392,7 +392,7 @@ For advanced use cases, you can import and use individual modules from ``lib/``:
        num_interior_points=50
    )
 
-See ``bin/example_advanced.py`` for comprehensive examples.
+See ``examples/example_advanced.py`` for comprehensive examples.
 
 Color Specification
 -------------------

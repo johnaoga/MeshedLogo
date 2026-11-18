@@ -4,18 +4,15 @@ Demonstrates how to use the logo generation system
 """
 
 import os
-import sys
 import random
 import numpy as np
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lib.character_renderer import CharacterRenderer
-from lib.string_processor import StringProcessor, RenderMode
-from lib.contour_extractor import ContourExtractor
-from lib.mesh_generator import MeshGenerator
-from lib.logo_generator import LogoGenerator
+from meshedlogo.character_renderer import CharacterRenderer
+from meshedlogo.string_processor import StringProcessor, RenderMode
+from meshedlogo.contour_extractor import ContourExtractor
+from meshedlogo.mesh_generator import MeshGenerator
+from meshedlogo.logo_generator import LogoGenerator
 
 
 def example_1_render_single_character():

@@ -3,12 +3,9 @@
 import unittest
 import numpy as np
 import os
-import sys
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lib.character_renderer import CharacterRenderer, CharacterImage
+from meshedlogo.character_renderer import CharacterRenderer, CharacterImage
 
 
 class TestCharacterRenderer(unittest.TestCase):

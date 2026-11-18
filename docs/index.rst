@@ -27,7 +27,7 @@ A professional, modular Python system for generating beautiful triangle-meshed l
 
 .. code-block:: python
 
-   from meshed_logo import MeshedLogo
+   from meshedlogo import MeshedLogo
 
    logo = MeshedLogo()
    logo.generate("HELLO", output_file="output/hello.png")
@@ -48,18 +48,11 @@ A professional, modular Python system for generating beautiful triangle-meshed l
 Installation
 ------------
 
-1. **Create and activate virtual environment:**
-
 .. code-block:: bash
 
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install meshedlogo
 
-2. **Install dependencies:**
-
-.. code-block:: bash
-
-   pip install -r requirements.txt
+See :doc:`quickstart` for installing from source.
 
 Dependencies
 ~~~~~~~~~~~~
@@ -68,7 +61,7 @@ Dependencies
 - ``numpy >= 1.26.0`` - Numerical operations
 - ``scipy >= 1.11.0`` - Delaunay triangulation
 - ``Pillow >= 10.0.0`` - Image processing
-- ``opencv-python >= 4.8.0`` - Contour extraction
+- ``opencv-python-headless >= 4.8.0`` - Contour extraction
 
 Indices and tables
 ==================

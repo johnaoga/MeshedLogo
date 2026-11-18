@@ -1,13 +1,12 @@
 # Configuration file for the Sphinx documentation builder.
-import os
-import sys
-sys.path.insert(0, os.path.abspath('..'))
+from importlib.metadata import version as _pkg_version
 
 # -- Project information -----------------------------------------------------
 project = 'MeshedLogo'
-copyright = '2024, MEMA & INMA'
-author = 'MEMA & INMA'
-release = '1.0.0'
+copyright = '2024-2026, John Aoga'
+author = 'John Aoga'
+release = _pkg_version('meshedlogo')
+version = '.'.join(release.split('.')[:2])
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -19,7 +18,7 @@ extensions = [
 ]
 
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'README.md']
 
 source_suffix = {
     '.rst': 'restructuredtext',
@@ -32,7 +31,6 @@ html_static_path = ['_static']
 html_logo = None
 html_theme_options = {
     'logo_only': False,
-    'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'vcs_pageview_mode': '',

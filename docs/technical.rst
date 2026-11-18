@@ -43,7 +43,7 @@ The image above shows the complete rendering pipeline for the letter 'M':
 
 .. code-block:: python
 
-   from lib.character_renderer import CharacterRenderer
+   from meshedlogo.character_renderer import CharacterRenderer
 
    renderer = CharacterRenderer(default_width=200, default_height=200)
    char_img = renderer.render('M')
@@ -68,7 +68,7 @@ For mathematical formulas, the system uses matplotlib's mathtext engine:
 
 .. code-block:: python
 
-   from lib.character_renderer import CharacterRenderer
+   from meshedlogo.character_renderer import CharacterRenderer
 
    renderer = CharacterRenderer()
 
@@ -121,7 +121,7 @@ The letter 'W' demonstrates proper handling of multiple interior holes. The left
 
 .. code-block:: python
 
-   from lib.contour_extractor import ContourExtractor
+   from meshedlogo.contour_extractor import ContourExtractor
 
    extractor = ContourExtractor(method='opencv')
    contour = extractor.extract_largest(char_img.matrix, simplify=True)
@@ -170,7 +170,7 @@ This ensures the mesh only covers the actual character shape, especially importa
 
 .. code-block:: python
 
-   from lib.mesh_generator import MeshGenerator
+   from meshedlogo.mesh_generator import MeshGenerator
 
    generator = MeshGenerator()
    mesh = generator.generate(
@@ -204,7 +204,7 @@ Triangles are colored based on their position:
 
 .. code-block:: python
 
-   from lib.logo_generator import LogoGenerator
+   from meshedlogo.logo_generator import LogoGenerator
 
    logo_gen = LogoGenerator(canvas_size=(1200, 800))
    logo = logo_gen.render_logo(
@@ -442,4 +442,4 @@ Extend ``MeshGenerator`` with different triangulation methods (constrained Delau
 
 Add factory methods to ``LogoGenerator`` for pre-configured styles
 
-See ``bin/example_advanced.py`` for examples of using individual modules.
+See ``examples/example_advanced.py`` for examples of using individual modules.

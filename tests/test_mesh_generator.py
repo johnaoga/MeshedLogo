@@ -3,11 +3,9 @@
 import unittest
 import numpy as np
 import os
-import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lib.mesh_generator import MeshGenerator, MeshData
+from meshedlogo.mesh_generator import MeshGenerator, MeshData
 
 
 class TestMeshGenerator(unittest.TestCase):

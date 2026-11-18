@@ -3,15 +3,12 @@
 Simple Examples - Basic usage of MeshedLogo class
 """
 
-import sys
 import os
 import random
 import numpy as np
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meshed_logo import MeshedLogo
+from meshedlogo import MeshedLogo
 
 
 def example_1_simple_text():

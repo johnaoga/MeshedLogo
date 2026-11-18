@@ -6,18 +6,21 @@ This guide will get you up and running with MeshedLogo in minutes.
 Installation
 ------------
 
-1. **Create and activate virtual environment:**
+**From PyPI (recommended):**
 
 .. code-block:: bash
 
+   pip install meshedlogo
+
+**From source (for development):**
+
+.. code-block:: bash
+
+   git clone https://github.com/johnaoga/MeshedLogo.git
+   cd MeshedLogo
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-2. **Install dependencies:**
-
-.. code-block:: bash
-
-   pip install -r requirements.txt
+   pip install -e ".[dev,docs]"
 
 Basic Usage
 -----------
@@ -27,7 +30,7 @@ Simple Text Logo
 
 .. code-block:: python
 
-   from meshed_logo import MeshedLogo
+   from meshedlogo import MeshedLogo
 
    logo = MeshedLogo()
    logo.generate("HELLO", output_file="output/hello.png")
@@ -50,19 +53,19 @@ Multi-Component Logo
 
 .. code-block:: python
 
-   logo = MeshedLogo(canvas_size=(1400, 700))
+   logo = MeshedLogo(canvas_size=(2400, 700))
 
    components = [
        {
            'text': 'MESHED',
            'position': (100, 400),
-           'scale': 2.5,
+           'scale': 2.0,
            'colors': ['cyan', 'magenta']
        },
        {
            'text': 'LOGO',
-           'position': (800, 400),
-           'scale': 2.5,
+           'position': (1600, 400),
+           'scale': 2.0,
            'colors': ['yellow', 'white']
        }
    ]
@@ -101,24 +104,20 @@ Command Line Usage
 .. code-block:: bash
 
    # Generate a simple logo
-   python bin/generate_logo.py "YOUR TEXT" output/logo.png
+   meshedlogo "YOUR TEXT" output/logo.png
 
    # Run simple examples
-   python bin/example_simple.py
+   python examples/example_simple.py
 
    # Run advanced examples
-   python bin/example_advanced.py
+   python examples/example_advanced.py
 
 Running Tests
 -------------
 
 .. code-block:: bash
 
-   # Run all tests
-   python tests/run_tests.py
-
-   # Or use unittest
-   python -m unittest discover tests
+   pytest
 
 **Expected result:** All tests should pass ✓
 
@@ -128,16 +127,17 @@ Project Structure
 ::
 
    USE THIS:
-     └── meshed_logo.py      ← Main class (simple API)
+     └── meshedlogo.MeshedLogo        ← Main class (simple API)
 
    EXAMPLES:
-     └── bin/
-         ├── generate_logo.py       ← CLI tool
-         ├── example_simple.py      ← Simple examples
-         └── example_advanced.py    ← Advanced examples
+     └── examples/
+         ├── example_simple.py        ← Simple examples
+         └── example_advanced.py      ← Advanced examples
 
    LIBRARY (for advanced use):
-     └── lib/
+     └── src/meshedlogo/
+         ├── meshed_logo.py           ← MeshedLogo class
+         ├── cli.py                   ← ``meshedlogo`` command
          ├── character_renderer.py
          ├── string_processor.py
          ├── contour_extractor.py
@@ -146,15 +146,14 @@ Project Structure
 
    TESTS:
      └── tests/
-         ├── test_*.py
-         └── run_tests.py
+         └── test_*.py
 
 Tips
 ----
 
-1. **Start simple**: Use ``meshed_logo.py`` MeshedLogo class
-2. **Run examples**: Check ``bin/example_simple.py`` for ideas
-3. **Test changes**: Run ``python tests/run_tests.py``
+1. **Start simple**: Use the ``MeshedLogo`` class
+2. **Run examples**: Check ``examples/example_simple.py`` for ideas
+3. **Test changes**: Run ``pytest``
 4. **Custom colors**: Use hex codes like '#00ff00' or names like 'cyan'
 5. **Adjust density**: Higher mesh_density = more triangles = more detail
 

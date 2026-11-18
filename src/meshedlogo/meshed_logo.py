@@ -5,7 +5,7 @@ Simple interface to generate triangle-meshed logos from text and formulas
 
 from typing import List, Tuple, Dict, Optional
 import os
-from lib.logo_generator import LogoGenerator
+from .logo_generator import LogoGenerator
 
 
 class MeshedLogo:

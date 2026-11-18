@@ -6,7 +6,7 @@ Processes text strings and formulas, converting them to character images
 from dataclasses import dataclass
 from typing import List, Optional
 from enum import Enum
-from lib.character_renderer import CharacterRenderer, CharacterImage
+from .character_renderer import CharacterRenderer, CharacterImage
 
 
 class RenderMode(Enum):

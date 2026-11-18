@@ -3,12 +3,10 @@
 import unittest
 import numpy as np
 import os
-import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lib.character_renderer import CharacterRenderer
-from lib.contour_extractor import ContourExtractor, ContourData
+from meshedlogo.character_renderer import CharacterRenderer
+from meshedlogo.contour_extractor import ContourExtractor, ContourData
 
 
 class TestContourExtractor(unittest.TestCase):

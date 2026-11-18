@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import os
 
-from lib.character_renderer import CharacterRenderer, CharacterImage
-from lib.string_processor import StringProcessor, RenderMode, CharacterMetadata
-from lib.contour_extractor import ContourExtractor, ContourData
-from lib.mesh_generator import MeshGenerator, MeshData
+from .character_renderer import CharacterRenderer, CharacterImage
+from .string_processor import StringProcessor, RenderMode, CharacterMetadata
+from .contour_extractor import ContourExtractor, ContourData
+from .mesh_generator import MeshGenerator, MeshData
 
 
 @dataclass

@@ -2,13 +2,11 @@
 
 import unittest
 import os
-import sys
 import numpy as np
 import random
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from meshed_logo import MeshedLogo
+from meshedlogo import MeshedLogo
 
 
 class TestMeshedLogo(unittest.TestCase):

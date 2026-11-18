@@ -8,7 +8,7 @@ MeshedLogo Class
 
 .. code-block:: python
 
-   from meshed_logo import MeshedLogo
+   from meshedlogo import MeshedLogo
 
 Main user-facing class for generating meshed logos.
 
@@ -214,7 +214,7 @@ CharacterRenderer
 
 .. code-block:: python
 
-   from lib.character_renderer import CharacterRenderer
+   from meshedlogo.character_renderer import CharacterRenderer
 
 Renders characters to binary image matrices.
 
@@ -256,7 +256,7 @@ StringProcessor
 
 .. code-block:: python
 
-   from lib.string_processor import StringProcessor
+   from meshedlogo.string_processor import StringProcessor
 
 Processes text strings and mathematical formulas.
 
@@ -293,7 +293,7 @@ ContourExtractor
 
 .. code-block:: python
 
-   from lib.contour_extractor import ContourExtractor
+   from meshedlogo.contour_extractor import ContourExtractor
 
 Extracts contour points from images.
 
@@ -339,7 +339,7 @@ MeshGenerator
 
 .. code-block:: python
 
-   from lib.mesh_generator import MeshGenerator
+   from meshedlogo.mesh_generator import MeshGenerator
 
 Creates triangle meshes from point sets.
 
@@ -385,7 +385,7 @@ LogoGenerator
 
 .. code-block:: python
 
-   from lib.logo_generator import LogoGenerator
+   from meshedlogo.logo_generator import LogoGenerator
 
 Orchestrates all components to generate complete logos.
 
@@ -522,9 +522,9 @@ The library follows semantic versioning (SemVer):
 - **Minor**: New features (backward compatible)
 - **Patch**: Bug fixes
 
-Current version: **1.0.0**
+The installed version is exposed as ``meshedlogo.__version__``:
 
 .. code-block:: python
 
-   import meshed_logo
-   print(meshed_logo.__version__)  # '1.0.0'
+   import meshedlogo
+   print(meshedlogo.__version__)
